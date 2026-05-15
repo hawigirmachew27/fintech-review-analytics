@@ -4,6 +4,7 @@
 # Data files
 data/
 *.csv
+*.db
 
 # Jupyter
 .ipynb_checkpoints/
