@@ -7,6 +7,10 @@ Imported by notebooks and scripts — not run directly.
 
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.stem import WordNetLemmatizer
+from nltk import word_tokenize, pos_tag
+from nltk.corpus import wordnet
+
 
 
 # ── Theme keyword map ──────────────────────────────────────────────────────────
@@ -32,54 +36,47 @@ THEME_MAP = {
 }
 
 
-def extract_top_keywords(
-    df: pd.DataFrame,
-    bank_name: str,
-    top_n: int = 20,
-) -> list:
-    """
-    Extract the most distinctive keywords from a single bank's reviews using TF-IDF.
+from nltk.stem import WordNetLemmatizer
+from nltk import word_tokenize, pos_tag
+from nltk.corpus import wordnet
 
-    What TF-IDF does
-    ----------------
-    TF  (Term Frequency)         — how often a word appears in one review
-    IDF (Inverse Doc Frequency)  — penalizes words that appear in ALL reviews
-    Result: words that are common in THIS bank's reviews but not in every review.
-    These are the truly distinctive topics for that bank.
+lemmatizer = WordNetLemmatizer()
 
-    Parameters
-    ----------
-    df        : Full reviews DataFrame (will filter to bank_name internally)
-    bank_name : 'CBE', 'BOA', or 'Dashen'
-    top_n     : Number of top keywords to return
+def get_wordnet_pos(word):
+    """Map NLTK POS tag to WordNet POS tag so lemmatizer works correctly."""
+    tag = pos_tag([word])[0][1][0].upper()
+    tag_map = {"J": wordnet.ADJ, "V": wordnet.VERB, "N": wordnet.NOUN, "R": wordnet.ADV}
+    return tag_map.get(tag, wordnet.NOUN)
 
-    Returns
-    -------
-    List of top keyword strings
-    """
+def lemmatize_text(text):
+    tokens = word_tokenize(text.lower())
+    return " ".join(lemmatizer.lemmatize(w, get_wordnet_pos(w)) for w in tokens if w.isalpha())
+
+def extract_top_keywords(df, bank_name, top_n=20):
     bank_reviews = df[df["bank"] == bank_name]["review"].tolist()
 
     if len(bank_reviews) < 5:
         print(f"[{bank_name}] Not enough reviews for TF-IDF.")
         return []
 
+    # ── Apply lemmatization before TF-IDF ─────────────────────────────
+    lemmatized_reviews = [lemmatize_text(r) for r in bank_reviews]
+
     vectorizer = TfidfVectorizer(
         stop_words="english",
-        ngram_range=(1, 2),   # single words AND two-word phrases e.g. "login error"
+        ngram_range=(1, 2),
         max_features=200,
-        min_df=2,             # keyword must appear in at least 2 reviews
+        min_df=2,
     )
 
-    tfidf_matrix = vectorizer.fit_transform(bank_reviews)
+    tfidf_matrix = vectorizer.fit_transform(lemmatized_reviews)  # use lemmatized
 
-    # Sum TF-IDF scores across all reviews to rank by overall importance
     scores = tfidf_matrix.sum(axis=0).A1
     keywords_scores = list(zip(vectorizer.get_feature_names_out(), scores))
     keywords_scores.sort(key=lambda x: x[1], reverse=True)
 
-    top_keywords = [kw for kw, _ in keywords_scores[:top_n]]
-    print(f"[{bank_name}] Top {top_n} keywords: {top_keywords}")
-    return top_keywords
+    print(f"[{bank_name}] Top {top_n} keywords: {[kw for kw, _ in keywords_scores[:top_n]]}")
+    return keywords_scores[:top_n]
 
 
 def assign_themes(df: pd.DataFrame, theme_map: dict = None) -> pd.DataFrame:
