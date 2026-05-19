@@ -13,7 +13,7 @@ import pandas as pd
 # ── Connection ─────────────────────────────────────────────────────────────────
 
 def get_connection(dbname="bank_reviews", user="postgres",
-                   password="yourpassword", host="localhost", port=5433):
+                   password="admin", host="localhost", port=5432):
     """
     Open and return a psycopg2 connection to PostgreSQL.
 

@@ -28,7 +28,7 @@ from src.database import (
 DB_CONFIG = {
     "dbname":   "bank_reviews",
     "user":     "postgres",
-    "password": "yourpassword",   # <-- change this
+    "password": "admin",   # <-- change this
     "host":     "localhost",
     "port":     5432,
 }
