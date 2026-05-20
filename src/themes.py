@@ -36,9 +36,7 @@ THEME_MAP = {
 }
 
 
-from nltk.stem import WordNetLemmatizer
-from nltk import word_tokenize, pos_tag
-from nltk.corpus import wordnet
+
 
 lemmatizer = WordNetLemmatizer()
 
@@ -111,8 +109,8 @@ def assign_themes(df: pd.DataFrame, theme_map: dict = None) -> pd.DataFrame:
 
     df["identified_theme"] = df["review"].apply(_find_theme)
 
-    print("\nTheme distribution (all banks):")
-    print(df["identified_theme"].value_counts().to_string())
+    # print("\nTheme distribution (all banks):")
+    # print(df["identified_theme"].value_counts().to_string())
 
     return df
 
